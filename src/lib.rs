@@ -90,15 +90,20 @@ fn do_stuff(value: u8) {
 ```
 
 This crates also includes the `AsBoundedXX<M, N>` traits (for example,
-the [AsBoundedU8]), which is implemented by any bounded type that can
-be safely casted into `BoundedXX<M, N>`. It can be used to generify
-function definitions to make easier using bounded types. For example:
+the [AsBoundedU8]), which is implemented by both, any bounded type and
+any primitive numeric type that can be safely casted into
+`BoundedXX<M, N>`. It can be used to generify function definitions to
+make easier using bounded types. For example:
 
 ```
-use bounded_nums::{BoundedI128, AsBoundedU8};
+use bounded_nums::{BoundedI128, AsBoundedU8, AsBoundedI32};
 
 fn print_percent<N: AsBoundedU8<0, 100>>(percent: N) {
     println!("{}%", percent.as_bounded_u8().unwrap());
+}
+
+fn do_whatever<N: AsBoundedI32<{-300}, 300>>(percent: N) {
+    // ...
 }
 
 fn main() {
@@ -109,6 +114,13 @@ fn main() {
     // number between 0 and 100 and, therefore, implements
     // BoundedU8<0, 100>.
     print_percent(my_number);
+
+    let other_number: i8 = 5;
+
+    // The primitive number i8 can be safely represented as a bounded
+    // number between -300 and 300, since i8 values can just go
+    // between -128 and 127.
+    do_whatever(other_number);
 }
 ```
 */
@@ -323,6 +335,15 @@ macro_rules! as_bounded_impl {
 		fn [<as_bounded_ $tnum>](self) -> [< Bounded $tnum:upper >]<M, N> {
 		    [< Bounded $tnum:upper >] {
 			value: (self.value as $tnum)
+		    }
+		}
+	    }
+
+	    impl<const M: $tnum, const N: $tnum> [< AsBounded $tnum:upper >]<M, N> for $impl
+	    where E<{[< is_as_bounded_implemented_for_ $tnum _from_ $impl >](M, N, $impl::MIN, $impl::MAX)}>: IsTrue {
+		fn [<as_bounded_ $tnum>](self) -> [< Bounded $tnum:upper >]<M, N> {
+		    [< Bounded $tnum:upper >] {
+			value: (self as $tnum)
 		    }
 		}
 	    }
