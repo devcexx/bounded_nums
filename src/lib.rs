@@ -56,7 +56,7 @@ represented by the current bounded number.
 
 However, if the bounds of the number wants to be changed, the
 [BoundedU8::remap] can be used instead. In this case,
-that function will return an [Option] value instead, since the
+that function will return a [Result] value instead, since the
 operation may fail in runtime in case the the contained number is not
 within the new provided range.
 
@@ -132,6 +132,7 @@ fn main() {
 
 use std::{
     convert::TryFrom,
+    error::Error,
     ops::{Add, Div, Mul, Sub},
 };
 
@@ -147,6 +148,33 @@ macro_rules! le {
         ($l) <= ($r)
     };
 }
+
+/// Error that happens when a numeric value, either a primitive or a
+/// bounded one, fails to be fit into a bounded number because it is
+/// out of its allowed range.
+#[derive(Debug)]
+pub enum IntoBoundedError {
+    /// Indicates that the error is caused because the provided
+    /// unconstrained number is above of the allowed bounds.
+    Overflow,
+
+    /// Indicates that the error is caused because the provided
+    /// unconstrained number is below of the allowed bounds.
+    Underflow,
+}
+
+impl std::fmt::Display for IntoBoundedError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            &IntoBoundedError::Overflow => f.write_str("Overflow"),
+            &IntoBoundedError::Underflow => f.write_str("Underflow"),
+        }
+    }
+}
+
+impl Error for IntoBoundedError {}
+
+pub type Result<R> = std::result::Result<R, IntoBoundedError>;
 
 macro_rules! gen_bounded_num {
     (@impl $tnum:ty, $tupper:ty) => {
@@ -235,29 +263,33 @@ macro_rules! gen_bounded_num {
 	    /// Returns the same number held by self, but in a
 	    /// different range, `[M1, N1]`. If the current number is
 	    /// not inside that new range, the remap operation will
-	    /// fail and `None` is returned.
-            pub const fn remap<const M1: $t_num, const N1: $t_num>(self) -> Option<$t_impl<M1, N1>>
+	    /// fail.
+            pub const fn remap<const M1: $t_num, const N1: $t_num>(self) -> Result<$t_impl<M1, N1>>
             where
                 E<{ le!(M1, N1) }>: IsTrue,
             {
-                if M1 <= self.value && self.value <= N1 {
-                    Some($t_impl { value: self.value })
-                } else {
-                    None
-                }
+		if self.value < M1 {
+		    Err(IntoBoundedError::Underflow)
+		} else if self.value > N1 {
+		    Err(IntoBoundedError::Overflow)
+		} else {
+		    Ok($t_impl { value: self.value })
+		}
             }
 
 	    paste::paste! {
-		#[doc = "Builds a new [" $t_impl "] from an [" $t_num "] number, inside the range `[M, N]`, only if the given number is inside that range. Otherwise, `None` is returned."]
-		pub const fn [<from_ $t_num>](value: $t_num) -> Option<$t_impl<M, N>>
+		#[doc = "Builds a new [" $t_impl "] from an [" $t_num "] number, inside the range `[M, N]`, only if the given number is inside that range. Otherwise, the operation fails."]
+		pub const fn [<from_ $t_num>](value: $t_num) -> Result<$t_impl<M, N>>
 		where
                     E<{ le!(M, N) }>: IsTrue,
 		{
-                    if M >= value && value <= N {
-			Some($t_impl { value })
-                    } else {
-			None
-                    }
+		    if value < M {
+			Err(IntoBoundedError::Underflow)
+		    } else if value > N {
+			Err(IntoBoundedError::Overflow)
+		    } else {
+			Ok($t_impl { value })
+		    }
 		}
 	    }
 
