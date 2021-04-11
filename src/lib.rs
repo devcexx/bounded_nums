@@ -198,12 +198,25 @@ macro_rules! gen_bounded_num {
     (@gen_bounded_struct $t_num:ty, $t_impl:ident) => {
 	paste::paste! {
 	    #[repr(transparent)]
-            #[derive(Debug, Clone, Copy)]
+            #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 	    #[doc = "Holds a [" $t_num "] number which is guaranteed in compile-time that is inside the closed range `[M, N]`."]
             pub struct $t_impl<const M: $t_num, const N: $t_num> {
 		value: $t_num,
             }
 	}
+
+	impl <const M: $t_num, const N: $t_num> std::fmt::Display for $t_impl<M, N> {
+	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(&self.value, f)
+	    }
+	}
+
+	impl <const M: $t_num, const N: $t_num> std::fmt::Debug for $t_impl<M, N> {
+	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}<{}, {}>({})", stringify!($t_impl), M, N, self.value)
+	    }
+	}
+
         #[allow(unused)]
         impl<const M: $t_num, const N: $t_num> $t_impl<M, N> {
 	    /// Infallibly returns the same number held by self, but
@@ -378,6 +391,23 @@ mod tests {
     }
 
     use super::{BoundedI32, BoundedU32};
+
+    #[test]
+    fn bounded_u32_display_ok() {
+        assert_eq!(
+            "55",
+            format!("{}", BoundedU32::<0, 100>::from_const::<55>())
+        );
+    }
+
+    #[test]
+    fn bounded_u32_debug_ok() {
+        assert_eq!(
+            "BoundedU32<0, 100>(96)",
+            format!("{:?}", BoundedU32::<0, 100>::from_const::<96>())
+        );
+    }
+
     #[test]
     fn bounded_u32_add_bounds_ok() {
         gen_test_fun!(a, BoundedU32<50, 100>, BoundedU32<10, 20>, BoundedU32<60, 120>, add);
