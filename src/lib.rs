@@ -99,7 +99,7 @@ make easier using bounded types. For example:
 use bounded_nums::{BoundedI128, AsBoundedU8, AsBoundedI32};
 
 fn print_percent<N: AsBoundedU8<0, 100>>(percent: N) {
-    println!("{}%", percent.as_bounded_u8().unwrap());
+    println!("{}%", percent.as_bounded_u8().value());
 }
 
 fn do_whatever<N: AsBoundedI32<{-300}, 300>>(percent: N) {
@@ -259,7 +259,7 @@ macro_rules! gen_bounded_num {
 	    }
 
 	    /// Returns the number held by self.
-            pub const fn unwrap(self) -> $t_num {
+            pub const fn value(self) -> $t_num {
                 self.value
             }
         }
