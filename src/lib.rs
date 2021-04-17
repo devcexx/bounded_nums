@@ -153,7 +153,7 @@ macro_rules! le {
 /// bounded one, fails to be fit into a bounded number because it is
 /// out of its allowed range.
 #[derive(Debug)]
-pub enum IntoBoundedError {
+pub enum BoundariesError {
     /// Indicates that the error is caused because the provided
     /// unconstrained number is above of the allowed bounds.
     Overflow,
@@ -163,18 +163,18 @@ pub enum IntoBoundedError {
     Underflow,
 }
 
-impl std::fmt::Display for IntoBoundedError {
+impl std::fmt::Display for BoundariesError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            &IntoBoundedError::Overflow => f.write_str("Overflow"),
-            &IntoBoundedError::Underflow => f.write_str("Underflow"),
+            &BoundariesError::Overflow => f.write_str("Overflow"),
+            &BoundariesError::Underflow => f.write_str("Underflow"),
         }
     }
 }
 
-impl Error for IntoBoundedError {}
+impl Error for BoundariesError {}
 
-pub type Result<R> = std::result::Result<R, IntoBoundedError>;
+pub type Result<R> = std::result::Result<R, BoundariesError>;
 
 macro_rules! gen_bounded_num {
     (@impl $tnum:ty, $tupper:ty) => {
@@ -269,9 +269,9 @@ macro_rules! gen_bounded_num {
                 E<{ le!(M1, N1) }>: IsTrue,
             {
 		if self.value < M1 {
-		    Err(IntoBoundedError::Underflow)
+		    Err(BoundariesError::Underflow)
 		} else if self.value > N1 {
-		    Err(IntoBoundedError::Overflow)
+		    Err(BoundariesError::Overflow)
 		} else {
 		    Ok($t_impl { value: self.value })
 		}
@@ -284,9 +284,9 @@ macro_rules! gen_bounded_num {
                     E<{ le!(M, N) }>: IsTrue,
 		{
 		    if value < M {
-			Err(IntoBoundedError::Underflow)
+			Err(BoundariesError::Underflow)
 		    } else if value > N {
-			Err(IntoBoundedError::Overflow)
+			Err(BoundariesError::Overflow)
 		    } else {
 			Ok($t_impl { value })
 		    }
