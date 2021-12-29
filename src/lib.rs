@@ -21,7 +21,7 @@ implementations for working with bounded numbers, which allows to
 define refined number types whose possible values are assured to be
 present inside a specific numeric range in compile time. **This crate
 uses experimental and incompleted compiler functions such as
-`const_generics` feature. Therefore, nightly compiler builds are
+`generic_const_exprs` feature. Therefore, nightly compiler builds are
 required, and no stability is guaranteed**.
 
 For example, you may define a [u8] number contained between 0 and 100,
@@ -125,7 +125,7 @@ fn main() {
 ```
 */
 
-#![feature(const_generics, const_evaluatable_checked, int_bits_const)]
+#![feature(generic_const_exprs)]
 #![allow(unused)]
 #![allow(incomplete_features)]
 #![allow(const_err)]
