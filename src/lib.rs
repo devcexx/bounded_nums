@@ -128,7 +128,6 @@ fn main() {
 #![feature(generic_const_exprs)]
 #![allow(unused)]
 #![allow(incomplete_features)]
-#![allow(const_err)]
 
 use std::{
     convert::TryFrom,
